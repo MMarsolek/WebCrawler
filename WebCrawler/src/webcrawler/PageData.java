@@ -1,3 +1,5 @@
+package webcrawler;
+
 class PageData{
 	private String myUrl;
 	private String myContents;
