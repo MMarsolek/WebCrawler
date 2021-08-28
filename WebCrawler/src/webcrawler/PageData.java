@@ -7,7 +7,6 @@ class PageData{
 	public PageData(String contents, String url){
 		setUrl(url);
 		setContents(contents);
-		
 	}
 	public String getUrl() {
 		return myUrl;
