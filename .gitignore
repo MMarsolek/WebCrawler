@@ -1,4 +1,6 @@
 .metadata
+.idea/
 WebCrawler/bin/
 WebCrawler/.classpath
 WebCrawler/.project
+out/
