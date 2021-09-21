@@ -1,5 +1,7 @@
 package webcrawler;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -7,27 +9,30 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class DataRequester implements Runnable {
+public class DataRequester implements Runnable{
 
-	private Queue<String> myUrlQueue;
-	private Queue<PageData> myDataQueue;
-	private ArrayList<String> myUrlsVisitedList;
-	private HashSet<String> myUrlsVisitedSet;
-	private Counter pageCount;
+	private final Queue<String> myUrlQueue;
+	private final Queue<PageData> myDataQueue;
+	private final ArrayList<String> myUrlsVisitedList;
+	private final HashSet<String> myUrlsVisitedSet;
+	private AtomicInteger pageCount;
+	private PropertyChangeListener myResultListener;
 	private boolean isRunning;
 	private UrlSanitizer mySanitizer;
 
+	private final PropertyChangeSupport propChangeSupport;
 
-	public DataRequester(Queue<String> theUrlQueue, Queue<PageData> theDataQueue, Counter counter,  UrlSanitizer sanitizeUrls) {
+	public DataRequester(Queue<String> theUrlQueue, Queue<PageData> theDataQueue, AtomicInteger counter) {
 		myUrlQueue = theUrlQueue;
 		myDataQueue = theDataQueue;
 		myUrlsVisitedSet = new HashSet<>();
 		pageCount = counter;
 		myUrlsVisitedList = new ArrayList<>();
 		isRunning = false;
-		mySanitizer = sanitizeUrls;
+		propChangeSupport = new PropertyChangeSupport(this);
 	}
 
 	public void run() {
@@ -35,7 +40,7 @@ public class DataRequester implements Runnable {
 		while(isRunning) {
 			try {
 				if (dataGetter()) {
-					pageCount.increment();
+					pageCount.getAndAdd(1);
 				}else{
 					Thread.sleep(500);
 				}
@@ -46,26 +51,24 @@ public class DataRequester implements Runnable {
 	}
 // Add "Final" to all final objects and variables
 	private boolean dataGetter() throws InterruptedException {
-
 		String url = removeFromQueue();
 		String contents;
-		String sanitizedUrl = mySanitizer.sanitizeUrl(url);
-		if(url == null || isInVisitedSet(sanitizedUrl)) {
+		if(url!=null) {
+			String sanitizedUrl = mySanitizer.sanitizeUrl(url);
+			if (isInVisitedSet(sanitizedUrl)) {
 				return false;
-		}
+			}
 			try {
 				contents = getURLContents(url);
 				PageData pd = new PageData(contents, url);
 				addUrlToSet(sanitizedUrl);
-				addToQueue(pd,url);
+				addToQueue(pd, url);
 				return true;
-
 			} catch (IOException e) {
-				//System.out.println("Website not found. " + url + "\t\t - " + e.getMessage());
 			}
+		}
 			return false;
 	}
-
 
 	/**
 	 * 	Takes the URLString and turns it into an URL object. It then opens the connection to the site belonging to the URL
@@ -82,19 +85,28 @@ public class DataRequester implements Runnable {
 		while ((inputLine = in.readLine()) != null) {
 			output.append(inputLine);
 		}
-		// Look up try with Resources
 		in.close();
 		return output.toString();
 	}
 
+	public void setMySanitizer(UrlSanitizer sanitizer){
+		mySanitizer = sanitizer;
+	}
+
+	public void addPropertyChangeListener(PropertyChangeListener listener) {
+		propChangeSupport.addPropertyChangeListener(listener);
+	}
+
+
 	synchronized void addUrlToSet(String url){
 		myUrlsVisitedSet.add(url);
+		myUrlsVisitedList.add(url);
+
 	}
 
 	synchronized boolean isInVisitedSet(String url){
 		return myUrlsVisitedSet.contains(url);
 	}
-
 
 	synchronized String removeFromQueue(){
 		return myUrlQueue.poll();
@@ -106,15 +118,24 @@ public class DataRequester implements Runnable {
 //Shortens URLS for sanitization (Shortens at the ?)
 //Look into the Thread locks to synchronize the HashSet and the queues
 
-
 	synchronized void addToQueue(PageData pd, String url) {
-		myUrlsVisitedList.add(url);
 		myDataQueue.add(pd);
+		propertyChangeEvent();
+	}
+
+	public void propertyChangeEvent(){
+		String url = myUrlsVisitedList.get(myUrlsVisitedList.size()-1);
+		propChangeSupport.firePropertyChange(url, myUrlsVisitedList.size()-1, myUrlsVisitedList.size());
 	}
 
 	public void stop(){
 		isRunning = false;
 	}
+
+	public boolean isRunning(){
+		return isRunning;
+	}
 }
+
 //Figure out how to stop both requestors. Maybe a sigInt? Something that will call the stop() at a certain point.
 //BreathFirst vs DepthFirst for links. Add boolean to different methods allowing you to choose how to search.

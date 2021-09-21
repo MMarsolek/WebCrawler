@@ -1,6 +1,6 @@
 package webcrawler;
 
-class PageData{
+public class PageData{
 	private String myUrl;
 	private String myContents;
 	
@@ -16,7 +16,6 @@ class PageData{
 	}
 	public void setUrl(String thisUrl) {
 		myUrl = thisUrl;
-
 	}
 	public void setContents(String thisContents) {
 		myContents = thisContents;
