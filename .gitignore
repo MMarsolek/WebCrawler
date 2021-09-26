@@ -1,6 +1,7 @@
 .metadata
 .idea/
-WebCrawler/bin/
-WebCrawler/.classpath
-WebCrawler/.project
+webcrawler.WebCrawler/bin/
+webcrawler.WebCrawler/.classpath
+webcrawler.WebCrawler/.project
+Maven/target
 out/

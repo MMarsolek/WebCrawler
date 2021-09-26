@@ -1,6 +1,9 @@
 package webcrawler.gui;
 
-import webcrawler.*;
+import webcrawler.CompleteUrlSanitizer;
+import webcrawler.UpToDomainSanitizer;
+import webcrawler.UpToQuerySanitizer;
+import webcrawler.WebCrawler;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -8,6 +11,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
+
 
 
 public class MyFrame extends JFrame {
@@ -172,7 +176,7 @@ public class MyFrame extends JFrame {
         myWc.addPropertyChangeListener(myWebcrawlerListener);
 
         setMySanitizer(myRadioButtons.getSelection().getActionCommand());
-        System.out.println("WebCrawler Created");
+        System.out.println("webcrawler.WebCrawler Created");
     }
 
     private void setStartUrl(JFormattedTextField urlTextField){
@@ -218,15 +222,15 @@ public class MyFrame extends JFrame {
                     myStopButton.setVisible(true);
                     myRestartButton.setVisible(true);
                 }
-                System.out.println("WebCrawler Running");
+                System.out.println("webcrawler.WebCrawler Running");
 
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         });
-        if(!myWc.isRunning()){
-            myStopButton.setVisible(false);
-        }
+//        if(!myWc.isRunning()&& !myWc.equals(null)){
+//            myStopButton.setVisible(false);
+//        }
     }
 
     private void restartingWebcrawler(){

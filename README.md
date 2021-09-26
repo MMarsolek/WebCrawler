@@ -1,4 +1,4 @@
-# WebCrawler
+# webcrawler.WebCrawler
 This is a webcrawler that gathers YouTube data. The user can either used a built in URL or use the URL of the video that they would like to start at. The crawler uses multiple-threads to scower the internet for data.
 ### How it Works
 One thread gathers data from the starting video while another one parses the data and adds it to a CSV. A third thread locates the URL for the next video it will visit. It gets this information from the Suggested Videos list. The final thread then adds the current URL to the top of the stack. This ensures that if the program crashes, it can pick up from the last visited video. This also allows us to ensure we have set stop point for the crawler.

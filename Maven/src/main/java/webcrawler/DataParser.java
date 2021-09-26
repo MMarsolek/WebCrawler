@@ -1,13 +1,13 @@
 package webcrawler;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.Queue;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 public class DataParser implements Runnable {
     private Queue<PageData> myDataQueue;

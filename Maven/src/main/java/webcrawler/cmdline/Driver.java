@@ -1,8 +1,11 @@
 package webcrawler.cmdline;
 
-import webcrawler.*;
+import webcrawler.CompleteUrlSanitizer;
+import webcrawler.UpToDomainSanitizer;
+import webcrawler.UpToQuerySanitizer;
+import webcrawler.WebCrawler;
 
-import java.util.*;
+import java.util.Scanner;
 
 public class Driver{
 	 public static void main( String[] args ) throws InterruptedException {

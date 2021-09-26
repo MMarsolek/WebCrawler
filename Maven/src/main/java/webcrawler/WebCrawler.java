@@ -1,12 +1,8 @@
 package webcrawler;
 
-import javax.lang.model.element.Element;
-import javax.swing.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,7 +36,7 @@ public class WebCrawler {
 
 
     public void start() throws InterruptedException{
-        System.out.println("WebCrawler Started");
+        System.out.println("webcrawler.WebCrawler Started");
         for (int i = 0; i < myNumOfThreads; i++) {
             Runnable runner;
             if (i % 3 == 0) {

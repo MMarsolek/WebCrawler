@@ -1,5 +1,6 @@
 package webcrawler.gui;
 
+
 public class GUI {
     public  GUI() throws InterruptedException {
         MyFrame myFrame = new MyFrame();
