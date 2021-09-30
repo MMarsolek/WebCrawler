@@ -16,13 +16,16 @@ import java.text.NumberFormat;
 
 public class MyFrame extends JFrame {
 
-    private  int myMaxThreads;
     private  int myMaxSites;
+    private int myDrThreads;
+    private int myDpThreads;
     private  String myUrl;
     private WebCrawler myWc;
     private final Color myBackground;
     private ButtonGroup myRadioButtons;
-    private JFormattedTextField threadTextField;
+    private JFormattedTextField dpThreadTextField;
+    private JFormattedTextField drThreadTextField;
+
     private JFormattedTextField urlTextField;
     private JFormattedTextField maxSiteTextField;
     private PropertyChangeListener myWebcrawlerListener;
@@ -30,14 +33,17 @@ public class MyFrame extends JFrame {
     private JButton myStartButton;
     private JButton myStopButton;
     private JButton myRestartButton;
-    private JPanel myResultPanel;
-    private DefaultListModel<String> resultDefaultList;
+    private final DefaultListModel<String> resultDefaultList;
+    private final Border border;
+    private  final Label completeLabel;
+
     private final int width;
     private final int height;
 
 
     public MyFrame(){
-        myMaxThreads = 10;
+        myDpThreads = 10;
+        myDrThreads = 10;
         myMaxSites = 10;
         myUrl = "https://www.Google.com";
         myBackground = new Color(0xFFFAFAFA);
@@ -46,6 +52,10 @@ public class MyFrame extends JFrame {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         width = screenSize.width;
         height = screenSize.height;
+        border = BorderFactory.createLineBorder(Color.black, 1);
+        completeLabel = new Label("Complete!");
+
+
 
     }
     public void start() {
@@ -68,16 +78,20 @@ public class MyFrame extends JFrame {
         myStopButton = new JButton("Stop");
         myStopButton.setVisible(false);
         controlButtons.add(myStopButton);
+        controlButtons.add(new Label("Complete!")).setVisible(false);
 
         myRestartButton = new JButton("Restart");
         myRestartButton.setVisible(false);
         controlButtons.add(myRestartButton);
+        completeLabel.setVisible(false);
+        controlButtons.add(completeLabel);
 
-        inputSection.add(controlButtons);
+        this.add(controlButtons, BorderLayout.SOUTH);
 
         controlWebCrawler();
-        myResultPanel = new JPanel();
+        JPanel myResultPanel = new JPanel();
         myResultPanel.add(setResultPanel());
+        myResultPanel.setBorder(border);
 
         this.add(new JScrollPane(setResultPanel()));
         this.getRootPane().setBorder(new EmptyBorder(5,5,5,5));
@@ -107,13 +121,19 @@ public class MyFrame extends JFrame {
         urlTextField.setColumns(15);
         startUrl.add(urlTextField);
 
-        JLabel l3 = new JLabel("Thread Input");
+        JLabel l3 = new JLabel("Parsing Data Threads Input");
         thread.add(l3);
-        threadTextField = new JFormattedTextField(format);
-        threadTextField.setValue(myMaxThreads);
-        threadTextField.setColumns(5);
-        thread.add(threadTextField);
+        dpThreadTextField = new JFormattedTextField(format);
+        dpThreadTextField.setValue(myDpThreads);
+        dpThreadTextField.setColumns(5);
+        thread.add(dpThreadTextField);
 
+        JLabel l4 = new JLabel("Requesting Data Threads Input");
+        thread.add(l4);
+        drThreadTextField = new JFormattedTextField(format);
+        drThreadTextField.setValue(myDrThreads);
+        drThreadTextField.setColumns(5);
+        thread.add(drThreadTextField);
 
         mainPanel.add(maxSite, BorderLayout.NORTH);
         mainPanel.add(startUrl, BorderLayout.NORTH);
@@ -130,24 +150,27 @@ public class MyFrame extends JFrame {
         JRadioButton c = new JRadioButton("Complete URLs");
         c.setActionCommand("Complete");
 
-
-
         a.setBackground(myBackground);
+        a.setHorizontalAlignment(SwingConstants.CENTER);
         b.setBackground(myBackground);
+        b.setHorizontalAlignment(SwingConstants.CENTER);
         c.setBackground(myBackground);
+        c.setHorizontalAlignment(SwingConstants.CENTER);
 
 
         myRadioButtons.add(a);
         myRadioButtons.add(b);
         myRadioButtons.add(c);
         a.setSelected(true);
+        JPanel buttonPanel = new JPanel();
 
 
 
-        mainPanel.add(a, BorderLayout.CENTER);
-        mainPanel.add(b, BorderLayout.CENTER);
-        mainPanel.add(c, BorderLayout.CENTER);
-        Border border = BorderFactory.createLineBorder(Color.black, 1);
+        buttonPanel.add(a, BorderLayout.CENTER);
+        buttonPanel.add(b, BorderLayout.CENTER);
+        buttonPanel.add(c, BorderLayout.CENTER);
+        buttonPanel.setBackground(myBackground);
+        mainPanel.add(buttonPanel);
         mainPanel.setLayout(new FlowLayout());
         mainPanel.setBorder(border);
         return mainPanel;
@@ -162,26 +185,17 @@ public class MyFrame extends JFrame {
         return new JList<>(resultDefaultList);
     }
 
-//    private void clearResultPanel(){
-//        resultDefaultList = new DefaultListModel<>();
-//        resultDefaultList.clear();
-//        myResultPanel.removeAll();
-//    }
-
     private void setUpWebCrawler(){
         setStartUrl(urlTextField);
-        setNumberOfThreads(threadTextField);
+        setNumberOfThreads(drThreadTextField, dpThreadTextField);
         setNumberOfSites(maxSiteTextField);
-        myWc =  new WebCrawler(myMaxSites, myUrl, myMaxThreads);
+        myWc =  new WebCrawler(myMaxSites, myUrl, myDpThreads, myDrThreads);
         myWc.addPropertyChangeListener(myWebcrawlerListener);
-
         setMySanitizer(myRadioButtons.getSelection().getActionCommand());
-        System.out.println("webcrawler.WebCrawler Created");
     }
 
     private void setStartUrl(JFormattedTextField urlTextField){
         myUrl = urlTextField.getText();
-        System.out.println("Url Set");
     }
 
     private void setNumberOfSites(JFormattedTextField siteTextField){
@@ -189,17 +203,18 @@ public class MyFrame extends JFrame {
         if (numOfSites > 0){
             myMaxSites = numOfSites;
         }
-        System.out.println("My max sites " + myMaxSites);
     }
 
-    private void setNumberOfThreads(JFormattedTextField threadTextField) {
+    private void setNumberOfThreads(JFormattedTextField drThreadTextField, JFormattedTextField dpThreadTextField) {
 
-            int maxThreads = Integer.parseInt(threadTextField.getText());
-            if (maxThreads > 0) {
-                myMaxThreads = maxThreads;
+        int drThreads = Integer.parseInt(drThreadTextField.getText());
+        int dpThreads = Integer.parseInt(dpThreadTextField.getText());
+            if (drThreads > 0) {
+                myDrThreads = drThreads;
             }
-            System.out.println("Threads Set to " + myMaxThreads);
-
+        if (dpThreads > 0) {
+            myDpThreads = dpThreads;
+        }
     }
 
 
@@ -207,7 +222,6 @@ public class MyFrame extends JFrame {
         startingWebcrawler();
         stopRunningWebCrawler();
         restartingWebcrawler();
-
     }
 
     private void startingWebcrawler(){
@@ -222,15 +236,10 @@ public class MyFrame extends JFrame {
                     myStopButton.setVisible(true);
                     myRestartButton.setVisible(true);
                 }
-                System.out.println("webcrawler.WebCrawler Running");
-
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }
         });
-//        if(!myWc.isRunning()&& !myWc.equals(null)){
-//            myStopButton.setVisible(false);
-//        }
     }
 
     private void restartingWebcrawler(){
@@ -242,7 +251,6 @@ public class MyFrame extends JFrame {
             myWc.resetMyCounter();
             myStopButton.setVisible(false);
             myStartButton.doClick();
-            System.out.println("Restart event activated");
         });
     }
 
@@ -251,9 +259,9 @@ public class MyFrame extends JFrame {
         myStopButton.addActionListener((e) -> {
             try {
                 myWc.stop();
+                completeLabel.setVisible(true);
                     myStopButton.setVisible(false);
                     myStartButton.setVisible(true);
-
             } catch (InterruptedException ex) {
                 ex.printStackTrace();
             }

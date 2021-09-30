@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Queue;
 
 public class DataParser implements Runnable {
-    private Queue<PageData> myDataQueue;
-    private Queue<String> myUrlQueue;
+    private final Queue<PageData> myDataQueue;
+    private final Queue<String> myUrlQueue;
     private boolean isRunning;
 
     public DataParser(Queue<String> theUrlQueue, Queue<PageData> theDataQueue) {
@@ -33,9 +33,9 @@ public class DataParser implements Runnable {
         }
     }
 
-    private boolean getUrlsFromData() throws MalformedURLException {
+    boolean getUrlsFromData() throws MalformedURLException {
         PageData pageData = removeUrlFromQueue();
-        if (pageData == null) {
+        if (pageData == null || pageData.getContents() == null || pageData.getContents().isBlank()) {
             return false;
         }
         String rawPageData = pageData.getContents();
@@ -48,33 +48,33 @@ public class DataParser implements Runnable {
         List<Element> listOfLink = doc.select("a");
         for (Element link : listOfLink) {
             String urlFromData = link.attr("href").toLowerCase();
-
             if (!urlFromData.contains("://")) {
                 urlFromData = getDomainFromUrl(pageData.getUrl()) + (urlFromData);
             }
             addUrlToQueue(urlFromData);
-
         }
     }
 
-    private String getDomainFromUrl(String url) throws MalformedURLException {
+    String getDomainFromUrl(String url) throws MalformedURLException {
         URL myUrl = new URL(url);
-        String domain = String.format("%s://%s", myUrl.getProtocol(), myUrl.getHost());
-        return domain;
+        return String.format("%s://%s", myUrl.getProtocol(), myUrl.getHost());
     }
 
     synchronized PageData removeUrlFromQueue() {
-        PageData pd = myDataQueue.poll();
-        return pd;
+        return myDataQueue.poll();
     }
 
     synchronized void addUrlToQueue(String url) {
-        myUrlQueue.add(url);
+        if(url!=null && !url.isBlank()){
+            myUrlQueue.add(url);
+        }
     }
 
-    //This method is called from the driver to stop the parser -- add one to stop the requester
     public void stop() {
         isRunning = false;
+    }
+    public boolean checkIfStillRunning(){
+        return isRunning;
     }
 }
 

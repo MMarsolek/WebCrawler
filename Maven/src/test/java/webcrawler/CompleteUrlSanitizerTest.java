@@ -33,7 +33,7 @@ public class CompleteUrlSanitizerTest {
     }
     @Test
     public void testSanitizerBlankInput() {
-        assertEquals(null, myTestSanitizer.sanitizeUrl(""));
+        assertNull(myTestSanitizer.sanitizeUrl(""));
     }
 
 
