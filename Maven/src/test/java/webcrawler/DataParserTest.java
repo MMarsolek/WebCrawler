@@ -77,7 +77,52 @@ public class DataParserTest {
         assertFalse(results);
     }
 
+    @Test
+    public void numberOfTimesWordsAppearOnlyCorrectTest(){
+        int testResults = dataParser.numberOfTimesWordAppears("This this sthis ssthiss ThIs", "this");
+        assertEquals(5, testResults);
+    }
 
+    @Test
+    public void numberOfTimesWordsAppearMixInputTest(){
+        int testResults = dataParser.numberOfTimesWordAppears("Today is a great day! This will be a memorable day.", "this");
+        assertEquals(1, testResults);
+
+    }
+    @Test
+    public void numberOfTimesWordsAppearNoCorrectTest(){
+        int testResults = dataParser.numberOfTimesWordAppears("Today is a great day!", "this");
+        assertEquals(0, testResults);
+    }
+
+    @Test
+    public void numberOfTimesWordsAppearNullWordTest(){
+        assertThrows(NullPointerException.class, ()->{
+            dataParser.numberOfTimesWordAppears("Today is a great day!", null);
+        });
+    }
+    @Test
+    public void numberOfTimesWordsAppearNullDataTest(){
+        int testResults = dataParser.numberOfTimesWordAppears(null, "this");
+        assertEquals(0, testResults);
+    }
+
+    @Test
+    public void numberOfTimesWordsAppearRunOnSentenceTest(){
+        int testResults = dataParser.numberOfTimesWordAppears("Thisisarunonsentence. Ihopeitcanfindthecorrectnumberinthis.", "this");
+        assertEquals(2, testResults);
+    }
+    @Test
+    public void numberOfTimesWordsAppearEndWithPeriodTest(){
+        int testResults = dataParser.numberOfTimesWordAppears("This is the end.", "end");
+        assertEquals(1, testResults);
+    }
+
+    @Test
+    public void numberOfTimesWordsAppearContainTabTest(){
+        int testResults = dataParser.numberOfTimesWordAppears("This is   the end.   end     ", "end");
+        assertEquals(2, testResults);
+    }
 
 
 }

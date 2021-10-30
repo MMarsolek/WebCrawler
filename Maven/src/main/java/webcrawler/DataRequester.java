@@ -23,14 +23,13 @@ public class DataRequester implements Runnable {
 
     private final Queue<String> myUrlQueue;
     private final Queue<PageData> myDataQueue;
-    private final ArrayList<String> myUrlsVisitedList;
+    private final ArrayList<PageData> myUrlsVisitedList;
     private final HashSet<String> myUrlsVisitedSet;
-    private AtomicInteger pageCount;
-    //private PropertyChangeListener myResultListener;
+    private final AtomicInteger pageCount;
     private boolean isRunning;
     private UrlSanitizer mySanitizer;
     private final HttpClient myClient;
-    private int statusRetryCounter;
+    private final int statusRetryCounter;
 
 
     private final PropertyChangeSupport propChangeSupport;
@@ -81,7 +80,8 @@ public class DataRequester implements Runnable {
             try {
                 contents = getURLContents(url);
                 PageData pd = new PageData(contents, url);
-                addUrlToSet(sanitizedUrl);
+                pd.setMySanitizedUrl(sanitizedUrl);
+                addUrlToSet(pd);
                 addToQueue(pd);
                 return true;
             } catch (IOException e) {
@@ -125,15 +125,13 @@ public class DataRequester implements Runnable {
         mySanitizer = sanitizer;
     }
 
-    //
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         propChangeSupport.addPropertyChangeListener(listener);
     }
 
-
-    synchronized void addUrlToSet(String url) {
-        myUrlsVisitedSet.add(url);
-        myUrlsVisitedList.add(url);
+    synchronized void addUrlToSet(PageData pd) {
+        myUrlsVisitedSet.add(pd.getMySanitizedUrl());
+        myUrlsVisitedList.add(pd);
 
     }
 
@@ -145,21 +143,18 @@ public class DataRequester implements Runnable {
         return myUrlQueue.poll();
     }
 
-    public ArrayList<String> getMyUrlsVisitedList() {
+    public ArrayList<PageData> getMyUrlsVisitedList() {
         return myUrlsVisitedList;
     }
-//Shortens URLS for sanitization (Shortens at the ?)
-//Look into the Thread locks to synchronize the HashSet and the queues
 
-    //
     synchronized void addToQueue(PageData pd) {
         myDataQueue.add(pd);
         propertyChangeEvent();
     }
 
-    //
     public void propertyChangeEvent() {
-        String url = myUrlsVisitedList.get(myUrlsVisitedList.size() - 1);
+        PageData pd = myUrlsVisitedList.get(myUrlsVisitedList.size() - 1);
+        String url = pd.getMySanitizedUrl();
         propChangeSupport.firePropertyChange(url, myUrlsVisitedList.size() - 1, myUrlsVisitedList.size());
     }
 
@@ -171,6 +166,3 @@ public class DataRequester implements Runnable {
         return isRunning;
     }
 }
-
-//Figure out how to stop both requestors. Maybe a sigInt? Something that will call the stop() at a certain point.
-//BreathFirst vs DepthFirst for links. Add boolean to different methods allowing you to choose how to search.

@@ -1,9 +1,6 @@
 package webcrawler.cmdline;
 
-import webcrawler.CompleteUrlSanitizer;
-import webcrawler.UpToDomainSanitizer;
-import webcrawler.UpToQuerySanitizer;
-import webcrawler.WebCrawler;
+import webcrawler.*;
 
 import java.util.Scanner;
 
@@ -71,8 +68,8 @@ public class Driver{
 
 		 wc.waitUntilFinished();
 		 wc.stop();
-		 for(String url : wc.visitedUrlsList()){
-			 System.out.println(url);
+		 for(PageData url : wc.visitedUrlsList()){
+			 System.out.println(url.getMySanitizedUrl());
 		 }
 	 }
 }

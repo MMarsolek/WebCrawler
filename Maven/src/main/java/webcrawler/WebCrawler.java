@@ -3,9 +3,11 @@ package webcrawler;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class WebCrawler {
     private final int myNumberOfMaxSites;
@@ -15,42 +17,34 @@ public class WebCrawler {
     private final DataRequester myDataRequestor;
     private final DataParser myDataParser;
     private final AtomicInteger myCounter;
-    private PropertyChangeListener myResultListener;
+    private PropertyChangeListener myRequesterResultListener;
+    private PropertyChangeListener myParserResultListener;
+    private HashMap<String, Integer> urlWordCountMap;
     private final  ArrayList<Thread> myThreads;
     private final PropertyChangeSupport propChangeSupport;
 
     public WebCrawler(int numberOfMaxSites, String startUrl, int numOfThreads){
-        Queue<String> urlQueue = new LinkedBlockingQueue<>();
-        Queue<PageData> dataQueue = new LinkedBlockingQueue<>();
-        myNumberOfMaxSites = numberOfMaxSites;
-        myNumOfThreads = numOfThreads;
-        urlQueue.add(startUrl);
-        myCounter = new AtomicInteger();
-        myDataParser = new DataParser(urlQueue, dataQueue);
-        myDataRequestor= new DataRequester(urlQueue, dataQueue, myCounter);
-        myThreads = new ArrayList<>();
-        propChangeSupport =  new PropertyChangeSupport(this);
-        propertyChangeEvent();
-        myDataRequestor.addPropertyChangeListener(myResultListener);
-        myNumOfDpThreads = 0;
-        myNumOfDrThreads = 0;
+        this(numberOfMaxSites, startUrl,numOfThreads, numOfThreads, "");
     }
 
-    public WebCrawler(int numberOfMaxSites, String startUrl, int numOfDRThreads, int numOfDPThreads){
+    public WebCrawler(int numberOfMaxSites, String startUrl, int numOfDRThreads, int numOfDPThreads, String wordToSearchFor){
         Queue<String> urlQueue = new LinkedBlockingQueue<>();
         Queue<PageData> dataQueue = new LinkedBlockingQueue<>();
         myNumberOfMaxSites = numberOfMaxSites;
         urlQueue.add(startUrl);
         myCounter = new AtomicInteger();
-        myDataParser = new DataParser(urlQueue, dataQueue);
+        myDataParser = new DataParser(urlQueue, dataQueue, wordToSearchFor);
         myDataRequestor= new DataRequester(urlQueue, dataQueue, myCounter);
         myThreads = new ArrayList<>();
         propChangeSupport =  new PropertyChangeSupport(this);
         propertyChangeEvent();
-        myDataRequestor.addPropertyChangeListener(myResultListener);
+        myDataParser.addPropertyChangeListener(myParserResultListener);
+        myDataRequestor.addPropertyChangeListener(myRequesterResultListener);
         myNumOfDpThreads = numOfDPThreads;
         myNumOfDrThreads = numOfDRThreads;
         myNumOfThreads = numOfDPThreads + numOfDRThreads;
+        urlWordCountMap = new HashMap<>();
+
     }
 
     public void start() throws InterruptedException {
@@ -103,10 +97,7 @@ public class WebCrawler {
     public void stop() throws InterruptedException {
         myDataParser.stop();
         myDataRequestor.stop();
-
-
         for (Thread t : myThreads){
-
             t.join();
         }
     }
@@ -115,16 +106,34 @@ public class WebCrawler {
         myCounter.set(0);
     }
 
-    public void propertyChangeEvent(){
-        myResultListener = event -> {
-            if (myCounter.get() < myNumberOfMaxSites) {
-                propChangeSupport.firePropertyChange(event.getPropertyName(), event.getOldValue(), event.getNewValue());
-            }
-        };
-
+    private void updateUrlWordCountMap(String url, int wordCount){
+        if (url!=null) {
+            urlWordCountMap.put(url, wordCount);
+        }
     }
 
-    public ArrayList<String> visitedUrlsList(){
+    public void propertyChangeEvent(){
+        myRequesterResultListener = event -> {
+//                propChangeSupport.firePropertyChange(event.getPropertyName(), -1, (int)urlWordCountMap.get(event.getPropertyName()));
+                    updateUrlWordCountMap(event.getPropertyName(), -1);
+        };
+        myParserResultListener = event -> {
+            updateUrlWordCountMap(event.getPropertyName(), (int) event.getNewValue());
+            //propChangeSupport.firePropertyChange(event.getPropertyName(), 0 ,(int)urlWordCountMap.get(event.getPropertyName()));
+
+        };
+          for(String urlString : urlWordCountMap.keySet())
+            {
+            int wordCountValue = urlWordCountMap.get(urlString);
+            if (myCounter.get() < myNumberOfMaxSites) {
+                propChangeSupport.firePropertyChange(urlString, -1, wordCountValue);
+            }
+        }
+    }
+
+    //AddToHashMap(Roppd, url)
+
+    public ArrayList<PageData> visitedUrlsList(){
         return myDataRequestor.getMyUrlsVisitedList();
     }
 

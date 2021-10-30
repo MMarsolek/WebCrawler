@@ -34,7 +34,7 @@ public class DataRequesterTest extends Mockito {
     @Test
     public void testGetUrlContents() throws IOException, InterruptedException {
         String fakeUrl = "https://mubar";
-        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+        HttpResponse<String> httpResponse = Mockito.mock(HttpResponse.class);
         when(myClient.send(Mockito.any(HttpRequest.class), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
         when(httpResponse.body()).thenReturn("Contents of body");
         String testResponse = dr.getURLContents(fakeUrl);
@@ -43,10 +43,10 @@ public class DataRequesterTest extends Mockito {
     @Test
     public void testGetUrlContentsWith400Status() throws IOException, InterruptedException {
         String fakeUrl = "https://mubar";
-        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
-        when(myClient.send(Mockito.any(HttpRequest.class), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+        HttpResponse<String> httpResponse = (HttpResponse<String>) Mockito.mock(HttpResponse.class);
+        when(myClient.send(Mockito.any(HttpRequest.class), HttpResponse.BodyHandlers.ofString())).thenReturn(httpResponse);
         when(httpResponse.statusCode()).thenReturn(400);
-        assertThrows(IOException.class,()->dr.getURLContents(fakeUrl));
+        assertThrows(IOException.class,() -> dr.getURLContents(fakeUrl));
     }
 
     @Test
@@ -59,7 +59,7 @@ public class DataRequesterTest extends Mockito {
     @Test
     public void testGetUrlContentsWith500ChangedTo200Status() throws IOException, InterruptedException {
         String fakeUrl = "https://mubar";
-        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+        HttpResponse<String> httpResponse = Mockito.mock(HttpResponse.class);
         when(myClient.send(Mockito.any(HttpRequest.class), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
         when(httpResponse.statusCode()).thenReturn(500);
         when(httpResponse.statusCode()).thenReturn(200);
@@ -71,9 +71,10 @@ public class DataRequesterTest extends Mockito {
     @Test
     public void testGetUrlContentsWith500Status() throws IOException, InterruptedException {
         String fakeUrl = "https://mubar";
-        HttpResponse httpResponse = Mockito.mock(HttpResponse.class);
+        HttpResponse<?> httpResponse = Mockito.mock(HttpResponse.class);
         when(myClient.send(Mockito.any(HttpRequest.class), Mockito.any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
         when(httpResponse.statusCode()).thenReturn(500);
+
         assertThrows(IOException.class,()->dr.getURLContents(fakeUrl));
         Mockito.verify(httpResponse, times(minStatusCheckTimes));
     }

@@ -5,13 +5,16 @@ import webcrawler.UpToDomainSanitizer;
 import webcrawler.UpToQuerySanitizer;
 import webcrawler.WebCrawler;
 
+import javax.print.Doc;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
-
+import java.util.ArrayList;
 
 
 public class MyFrame extends JFrame {
@@ -20,14 +23,10 @@ public class MyFrame extends JFrame {
     private int myDrThreads;
     private int myDpThreads;
     private  String myUrl;
+    private String myWordSearch;
     private WebCrawler myWc;
     private final Color myBackground;
     private ButtonGroup myRadioButtons;
-    private JFormattedTextField dpThreadTextField;
-    private JFormattedTextField drThreadTextField;
-
-    private JFormattedTextField urlTextField;
-    private JFormattedTextField maxSiteTextField;
     private PropertyChangeListener myWebcrawlerListener;
     private final Object myResultLock;
     private JButton myStartButton;
@@ -39,6 +38,8 @@ public class MyFrame extends JFrame {
 
     private final int width;
     private final int height;
+    private final int myFrameWidth;
+    private final int myFrameHeight;
 
 
     public MyFrame(){
@@ -46,6 +47,7 @@ public class MyFrame extends JFrame {
         myDrThreads = 10;
         myMaxSites = 10;
         myUrl = "https://www.Google.com";
+        myWordSearch = "Example";
         myBackground = new Color(0xFFFAFAFA);
         myResultLock = new Object();
         resultDefaultList = new DefaultListModel<>();
@@ -54,17 +56,17 @@ public class MyFrame extends JFrame {
         height = screenSize.height;
         border = BorderFactory.createLineBorder(Color.black, 1);
         completeLabel = new Label("Complete!");
+        myFrameHeight = height/2;
+        myFrameWidth = width/3+10;
 
 
 
     }
     public void start() {
-
-        this.setPreferredSize(new Dimension(width/3,height/2));
+        this.setMinimumSize(new Dimension(myFrameWidth,myFrameHeight));
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setTitle("Web Crawler");
         JPanel inputSection = createInputSections();
-        inputSection.setPreferredSize(new Dimension((height/10),(width/12)));
         this.add(inputSection, BorderLayout.NORTH);
 
         inputSection.setBackground(myBackground);
@@ -73,18 +75,18 @@ public class MyFrame extends JFrame {
 
         JPanel controlButtons = new JPanel();
         myStartButton = new JButton("Start");
-        controlButtons.add(myStartButton);
+        controlButtons.add(myStartButton, BorderLayout.NORTH);
 
         myStopButton = new JButton("Stop");
         myStopButton.setVisible(false);
-        controlButtons.add(myStopButton);
-        controlButtons.add(new Label("Complete!")).setVisible(false);
+        controlButtons.add(myStopButton, BorderLayout.NORTH);
 
         myRestartButton = new JButton("Restart");
         myRestartButton.setVisible(false);
-        controlButtons.add(myRestartButton);
+        controlButtons.add(myRestartButton, BorderLayout.NORTH);
         completeLabel.setVisible(false);
-        controlButtons.add(completeLabel);
+        controlButtons.add(completeLabel, BorderLayout.SOUTH);
+
 
         this.add(controlButtons, BorderLayout.SOUTH);
 
@@ -92,131 +94,124 @@ public class MyFrame extends JFrame {
         JPanel myResultPanel = new JPanel();
         myResultPanel.add(setResultPanel());
         myResultPanel.setBorder(border);
-
         this.add(new JScrollPane(setResultPanel()));
         this.getRootPane().setBorder(new EmptyBorder(5,5,5,5));
     }
 
 
     private JPanel createInputSections(){
-        JPanel mainPanel = new JPanel();
-        JPanel thread = new JPanel();
-        JPanel maxSite = new JPanel();
-        JPanel startUrl = new JPanel();
+        JPanel textFieldPanel = new JPanel();
         myRadioButtons = new ButtonGroup();
-
-        NumberFormat format = NumberFormat.getIntegerInstance();
-        format.setGroupingUsed(false);
-
-        JLabel l = new JLabel("Sites to Visit Input");
-        maxSite.add(l);
-        maxSiteTextField = new JFormattedTextField(format);
-        maxSiteTextField.setColumns(5);
-        maxSiteTextField.setValue(myMaxSites);
-        maxSite.add(maxSiteTextField);
-
-        JLabel l2 = new JLabel("URL Input");
-        startUrl.add(l2);
-        urlTextField = new JFormattedTextField(myUrl);
-        urlTextField.setColumns(15);
-        startUrl.add(urlTextField);
-
-        JLabel l3 = new JLabel("Parsing Data Threads Input");
-        thread.add(l3);
-        dpThreadTextField = new JFormattedTextField(format);
-        dpThreadTextField.setValue(myDpThreads);
-        dpThreadTextField.setColumns(5);
-        thread.add(dpThreadTextField);
-
-        JLabel l4 = new JLabel("Requesting Data Threads Input");
-        thread.add(l4);
-        drThreadTextField = new JFormattedTextField(format);
-        drThreadTextField.setValue(myDrThreads);
-        drThreadTextField.setColumns(5);
-        thread.add(drThreadTextField);
-
-        mainPanel.add(maxSite, BorderLayout.NORTH);
-        mainPanel.add(startUrl, BorderLayout.NORTH);
-        mainPanel.add(thread, BorderLayout.NORTH);
-
-        maxSite.setBackground(myBackground);
-        startUrl.setBackground(myBackground);
-        thread.setBackground(myBackground);
-
-        JRadioButton a = new JRadioButton("Filter to Query");
-        a.setActionCommand("Query");
-        JRadioButton b = new JRadioButton("Filter Using Domain");
-        b.setActionCommand("Domain");
-        JRadioButton c = new JRadioButton("Complete URLs");
-        c.setActionCommand("Complete");
-
-        a.setBackground(myBackground);
-        a.setHorizontalAlignment(SwingConstants.CENTER);
-        b.setBackground(myBackground);
-        b.setHorizontalAlignment(SwingConstants.CENTER);
-        c.setBackground(myBackground);
-        c.setHorizontalAlignment(SwingConstants.CENTER);
-
-
-        myRadioButtons.add(a);
-        myRadioButtons.add(b);
-        myRadioButtons.add(c);
-        a.setSelected(true);
+        ArrayList<JRadioButton> listOfButtons = new ArrayList<JRadioButton>();
         JPanel buttonPanel = new JPanel();
 
 
 
-        buttonPanel.add(a, BorderLayout.CENTER);
-        buttonPanel.add(b, BorderLayout.CENTER);
-        buttonPanel.add(c, BorderLayout.CENTER);
+        textFieldPanel.add(createPanelForFormattedTextField("Number of Sites to Visit", 5, myMaxSites, tf -> myMaxSites = getIntFromTextField(tf)));
+        textFieldPanel.add(createPanelForFormattedTextField("Word to Search For", 10, myWordSearch, tf -> myWordSearch = tf.getText()));
+        textFieldPanel.add(createPanelForFormattedTextField("Starting URL Input", 15, myUrl,tf -> myUrl = tf.getText()));
+        textFieldPanel.add(createPanelForFormattedTextField("Parsing Data Threads Input", 5, myDpThreads, tf -> myDpThreads = getIntFromTextField(tf)));
+        textFieldPanel.add(createPanelForFormattedTextField("Requesting Data Threads Input", 5, myDrThreads, tf -> myDrThreads = getIntFromTextField(tf)));
+
+        textFieldPanel.setLayout(new BoxLayout(textFieldPanel, BoxLayout.Y_AXIS));
+
+
+        listOfButtons.add(createNewRadioButton("Filter to Query", "Query"));
+        listOfButtons.add(createNewRadioButton("Filter Using Domain","Domain"));
+        listOfButtons.add(createNewRadioButton("Complete URLs","Complete"));
+
+        for(JRadioButton jrb : listOfButtons){
+            jrb.setBackground(myBackground);
+            jrb.setVerticalAlignment(SwingConstants.EAST);
+            buttonPanel.add(jrb);
+            myRadioButtons.add(jrb);
+        }
+        listOfButtons.get(0).setSelected(true);
+
         buttonPanel.setBackground(myBackground);
-        mainPanel.add(buttonPanel);
-        mainPanel.setLayout(new FlowLayout());
-        mainPanel.setBorder(border);
-        return mainPanel;
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+
+        JPanel mainInputPanel = new JPanel();
+        mainInputPanel.setLayout(new BorderLayout());
+        mainInputPanel.add(buttonPanel, BorderLayout.EAST);
+        mainInputPanel.add(textFieldPanel, BorderLayout.WEST);
+        mainInputPanel.setBorder(border);
+        mainInputPanel.setBackground(myBackground);
+        return mainInputPanel;
     }
 
-    private JList<String> setResultPanel(){
+    private JRadioButton createNewRadioButton(final String name, final String actionCommand){
+        JRadioButton newRadioButton = new JRadioButton(name);
+        newRadioButton.setActionCommand(actionCommand);
+        return newRadioButton;
+    }
+
+    private JPanel createPanelForFormattedTextField(final String label, final int columnSize, final int initialValue, final OnChangeEventListener eventListener){
+        NumberFormat format = NumberFormat.getIntegerInstance();
+        format.setGroupingUsed(false);
+        JFormattedTextField textField = new JFormattedTextField(format);
+        textField.setValue(initialValue);
+        return createPanelForFormattedTextField(label, columnSize, textField, eventListener);
+    }
+
+    private JPanel createPanelForFormattedTextField(final String label, final int columnSize, final String initialValue, final OnChangeEventListener eventListener){
+        JFormattedTextField textField = new JFormattedTextField(initialValue);
+        textField.setValue(initialValue);
+        return createPanelForFormattedTextField(label, columnSize, textField, eventListener);
+    }
+
+    private JPanel createPanelForFormattedTextField(final String label, final int columnSize, final JFormattedTextField textField,  final OnChangeEventListener eventListener) {
+        JPanel panelWithFormattedTextField = new JPanel();
+        DocumentListener docListener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                eventListener.formattedInputChange(textField);
+
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                eventListener.formattedInputChange(textField);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                eventListener.formattedInputChange(textField);
+                System.out.println("Event Listener called");
+            }
+        };
+        textField.getDocument().addDocumentListener(docListener);
+        panelWithFormattedTextField.add(new Label(label));
+        textField.setColumns(columnSize);
+        panelWithFormattedTextField.add(textField);
+        panelWithFormattedTextField.setBackground(myBackground);
+        panelWithFormattedTextField.setLayout(new FlowLayout(FlowLayout.LEFT));
+        return panelWithFormattedTextField;
+    }
+
+
+
+        private JList<String> setResultPanel(){
         myWebcrawlerListener = event -> {
             synchronized (myResultLock) {
-                    resultDefaultList.addElement(event.getPropertyName());
+                    resultDefaultList.addElement(event.getNewValue() + "\t" + event.getPropertyName());
             }
         };
         return new JList<>(resultDefaultList);
     }
 
     private void setUpWebCrawler(){
-        setStartUrl(urlTextField);
-        setNumberOfThreads(drThreadTextField, dpThreadTextField);
-        setNumberOfSites(maxSiteTextField);
-        myWc =  new WebCrawler(myMaxSites, myUrl, myDpThreads, myDrThreads);
+        myWc =  new WebCrawler(myMaxSites, myUrl, myDpThreads, myDrThreads, myWordSearch);
         myWc.addPropertyChangeListener(myWebcrawlerListener);
         setMySanitizer(myRadioButtons.getSelection().getActionCommand());
     }
 
-    private void setStartUrl(JFormattedTextField urlTextField){
-        myUrl = urlTextField.getText();
-    }
-
-    private void setNumberOfSites(JFormattedTextField siteTextField){
-        int numOfSites = Integer.parseInt(siteTextField.getText());
-        if (numOfSites > 0){
-            myMaxSites = numOfSites;
+    private int getIntFromTextField(JFormattedTextField siteTextField){
+        if (siteTextField.getText().isEmpty()){
+            return 0;
         }
+        return Math.max(Integer.parseInt(siteTextField.getText()), 0);
     }
-
-    private void setNumberOfThreads(JFormattedTextField drThreadTextField, JFormattedTextField dpThreadTextField) {
-
-        int drThreads = Integer.parseInt(drThreadTextField.getText());
-        int dpThreads = Integer.parseInt(dpThreadTextField.getText());
-            if (drThreads > 0) {
-                myDrThreads = drThreads;
-            }
-        if (dpThreads > 0) {
-            myDpThreads = dpThreads;
-        }
-    }
-
 
     private void controlWebCrawler(){
         startingWebcrawler();
@@ -226,6 +221,7 @@ public class MyFrame extends JFrame {
 
     private void startingWebcrawler(){
         myStartButton.addActionListener((e) -> {
+            completeLabel.setVisible(false);
             try {
                 if (myWc == null) {
                     setUpWebCrawler();
@@ -276,5 +272,10 @@ public class MyFrame extends JFrame {
         }else{
             myWc.setUrlSanitizer(new CompleteUrlSanitizer());
         }
+    }
+
+    @FunctionalInterface
+    private interface OnChangeEventListener{
+        void formattedInputChange(JFormattedTextField textField);
     }
 }
